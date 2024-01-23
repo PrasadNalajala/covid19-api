@@ -72,8 +72,81 @@ app.post("/districts/", async (request, response) => {
         '${cases}',
         '${cured}',
         '${active}',
-        '${deaths}',
+        '${deaths}'
     )`;
   await db.run(query);
   response.send("District successfully Added");
 });
+
+app.get("/districts/:districtId/", async (request, response) => {
+  const { districtId } = request.params;
+  const query = `
+    SELECT
+    district_id as districtId,
+    district_name as districtName,
+    state_id as stateId,
+    cases,
+    cured,
+    active,
+    deaths
+    FROM
+    district
+    WHERE
+    district_id='${districtId}'
+    `;
+  const data = await db.get(query);
+  response.send(data);
+});
+
+app.delete("/districts/:districtId", async (request, response) => {
+  const { districtId } = request.params;
+  const query = `
+    DELETE
+    FROM
+    district
+    WHERE
+    district_id='${districtId}'`;
+  await db.run(query);
+  response.send("District Removed");
+});
+
+app.put("/districts/:districtId/", async (request, response) => {
+  const { districtId } = request.params;
+  const { districtName, stateId, cases, cured, active, deaths } = request.body;
+  const query = `
+    UPDATE
+    district
+    SET 
+    district_name='${districtName}',
+    state_id='${stateId}',
+    cases='${cases}',
+    cured='${cured}',
+    active='${active}',
+
+    deaths='${deaths}'
+
+    `;
+  await db.run(query);
+  response.send("District Details Updated");
+});
+
+app.get("/states/:stateId/stats/", async (request, response) => {
+  const { stateId } = request.params;
+  const query = `
+    SELECT
+    SUM(district.cases) as totalCases,
+    SUM(district.cured) as totalCured,
+    SUM(district.active) as totalActive,
+    SUM(district.deaths) as totalDeaths
+    FROM
+    district
+    INNER JOIN state ON state.state_id=district.state_id
+    WHERE
+    district.state_id=${stateId}
+    `;
+
+  const data = await db.get(query);
+  response.send(data);
+});
+
+module.exports = app;
